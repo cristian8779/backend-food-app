@@ -1,7 +1,8 @@
 const express = require("express");
-const mongoose = require("mongoose");
 const cors = require("cors");
 require("dotenv").config();
+const connectDB = require("./config/database");
+const getLocalIP = require("./config/network"); // Obtener la IP local
 
 // Importar controladores y rutas
 const { register, login, verifyToken, isAdmin, canCreateAdmin } = require("./controllers/authController");
@@ -10,22 +11,20 @@ const saleRoutes = require("./routes/saleRoutes");
 
 const app = express();
 const PORT = process.env.PORT || 5000;
+const LOCAL_IP = getLocalIP(); // Detecta la IP automáticamente
 
 // Configuración
-app.use(cors({ origin: "*" })); // Permitir conexiones desde cualquier origen
+app.use(cors({ origin: "*" }));
 app.use(express.json());
 
-// Conectar a MongoDB
-mongoose
-  .connect(process.env.MONGO_URI, )
-  .then(() => console.log("✅ Conectado a MongoDB"))
-  .catch((error) => console.error("❌ Error conectando a MongoDB:", error));
+// Conectar a la base de datos
+connectDB();
 
 // Rutas de autenticación
 app.post("/auth/register", canCreateAdmin, register);
 app.post("/auth/login", login);
 app.get("/auth/admin", verifyToken, isAdmin, (req, res) => {
-  res.json({ message: "Bienvenido Admin" });
+    res.json({ message: "Bienvenido Admin" });
 });
 
 // Rutas de productos
@@ -34,5 +33,5 @@ app.use("/productos", productRoutes);
 // Rutas de ventas
 app.use("/ventas", saleRoutes);
 
-// Iniciar servidor
-app.listen(PORT, "0.0.0.0", () => console.log(`🚀 Servidor corriendo en http://192.168.0.91:${PORT}`));
+// Iniciar servidor en la IP detectada
+app.listen(PORT, LOCAL_IP, () => console.log(`🚀 Servidor corriendo en http://${LOCAL_IP}:${PORT}`));
